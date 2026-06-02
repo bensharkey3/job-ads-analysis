@@ -185,5 +185,22 @@ def main():
         run_incremental(app_id, app_key, s3, bucket)
 
 
+def lambda_handler(event, context):
+    app_id = os.environ.get("ADZUNA_APP_ID")
+    app_key = os.environ.get("ADZUNA_APP_KEY")
+    bucket = os.environ.get("S3_BUCKET")
+
+    if not app_id or not app_key or not bucket:
+        raise ValueError("ADZUNA_APP_ID, ADZUNA_APP_KEY, and S3_BUCKET must be set")
+
+    s3 = boto3.client("s3")
+    mode = event.get("mode", "incremental")
+
+    if mode == "adhoc":
+        run_adhoc(app_id, app_key, s3, bucket)
+    else:
+        run_incremental(app_id, app_key, s3, bucket)
+
+
 if __name__ == "__main__":
     main()

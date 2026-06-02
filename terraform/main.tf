@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.0"
+    }
   }
 }
 
@@ -19,14 +23,10 @@ variable "environment" {
   default = "dev"
 }
 
-resource "aws_s3_bucket" "job_ads" {
-  bucket = "job-ads-analysis-${var.environment}"
+variable "adzuna_app_id" {
+  sensitive = true
 }
 
-resource "aws_s3_bucket_versioning" "job_ads" {
-  bucket = aws_s3_bucket.job_ads.id
-
-  versioning_configuration {
-    status = "Disabled"
-  }
+variable "adzuna_app_key" {
+  sensitive = true
 }

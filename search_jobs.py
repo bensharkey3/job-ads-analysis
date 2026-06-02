@@ -185,5 +185,20 @@ def main():
         run_incremental(app_id, app_key, s3, bucket)
 
 
+def lambda_handler(event, context):
+    ssm = boto3.client("ssm")
+    app_id = ssm.get_parameter(Name=os.environ["SSM_APP_ID_PATH"])["Parameter"]["Value"]
+    app_key = ssm.get_parameter(Name=os.environ["SSM_APP_KEY_PATH"], WithDecryption=True)["Parameter"]["Value"]
+    bucket = os.environ["S3_BUCKET"]
+
+    s3 = boto3.client("s3")
+    mode = event.get("mode", "incremental")
+
+    if mode == "adhoc":
+        run_adhoc(app_id, app_key, s3, bucket)
+    else:
+        run_incremental(app_id, app_key, s3, bucket)
+
+
 if __name__ == "__main__":
     main()

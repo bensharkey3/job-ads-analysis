@@ -22,6 +22,14 @@ def search_jobs(app_id, app_key, what, where, results_per_page=5):
         return json.loads(response.read().decode())
 
 
+def fetch_full_description(app_id, app_key, adref):
+    params = urllib.parse.urlencode({"app_id": app_id, "app_key": app_key})
+    url = f"https://api.adzuna.com/v1/api/jobs/au/ad/{adref}?{params}"
+    with urllib.request.urlopen(url) as response:
+        data = json.loads(response.read().decode())
+    return data.get("description", "")
+
+
 def save_to_s3(s3_client, bucket, job, date):
     job_id = job["id"]
     key = f"{date.strftime('%Y/%m/%d')}/{job_id}.json"
@@ -55,6 +63,9 @@ def main():
     date = datetime.now(timezone.utc)
 
     for i, job in enumerate(results, 1):
+        adref = job.get("adref")
+        if adref:
+            job["description"] = fetch_full_description(app_id, app_key, adref)
         key = save_to_s3(s3, bucket, job, date)
         print(f"[{i}] Saved s3://{bucket}/{key}  —  {job.get('title')} @ {job.get('company', {}).get('display_name')}")
 

@@ -4,6 +4,7 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/lambda.zip
 terraform/terraform.tfvars
+terraform/tfplan
 
 # Python
 __pycache__/

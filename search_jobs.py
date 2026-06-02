@@ -107,8 +107,14 @@ def main():
         print("Error: S3_BUCKET environment variable must be set.")
         sys.exit(1)
 
-    data = search_jobs(app_id, app_key, what="senior data engineer", where="melbourne")
-    results = data.get("results", [])
+    search_terms = ["senior data engineer", "lead data engineer"]
+    seen_ids = set()
+    results = []
+    for term in search_terms:
+        for job in search_jobs(app_id, app_key, what=term, where="melbourne").get("results", []):
+            if job["id"] not in seen_ids:
+                seen_ids.add(job["id"])
+                results.append(job)
     print(f"Found {len(results)} job listing(s).\n")
 
     s3 = boto3.client("s3")

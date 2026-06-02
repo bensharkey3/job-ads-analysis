@@ -186,12 +186,10 @@ def main():
 
 
 def lambda_handler(event, context):
-    app_id = os.environ.get("ADZUNA_APP_ID")
-    app_key = os.environ.get("ADZUNA_APP_KEY")
-    bucket = os.environ.get("S3_BUCKET")
-
-    if not app_id or not app_key or not bucket:
-        raise ValueError("ADZUNA_APP_ID, ADZUNA_APP_KEY, and S3_BUCKET must be set")
+    ssm = boto3.client("ssm")
+    app_id = ssm.get_parameter(Name=os.environ["SSM_APP_ID_PATH"])["Parameter"]["Value"]
+    app_key = ssm.get_parameter(Name=os.environ["SSM_APP_KEY_PATH"], WithDecryption=True)["Parameter"]["Value"]
+    bucket = os.environ["S3_BUCKET"]
 
     s3 = boto3.client("s3")
     mode = event.get("mode", "incremental")

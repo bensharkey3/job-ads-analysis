@@ -48,7 +48,7 @@ def list_job_ids_for_date(s3, bucket, date_path):
     return job_ids
 
 
-def flatten_job(job_id, job):
+def flatten_job(job_id, job, skills=None):
     company = job.get("company") or {}
     return {
         "job_id": job_id,
@@ -59,6 +59,7 @@ def flatten_job(job_id, job):
         "salary_max": job.get("salary_max"),
         "salary_min": job.get("salary_min"),
         "salary_is_predicted": job.get("salary_is_predicted"),
+        "skills_and_tools_summary": skills,
     }
 
 
@@ -105,7 +106,14 @@ def lambda_handler(event, context):
             try:
                 obj = s3.get_object(Bucket=bronze_bucket, Key=bronze_key)
                 job = json.loads(obj["Body"].read())
-                existing[job_id] = flatten_job(job_id, job)
+                skills = None
+                try:
+                    s_obj = s3.get_object(Bucket=bronze_bucket, Key=f"{date_path}/{job_id}_summarised.json")
+                    skills = json.loads(s_obj["Body"].read())
+                except ClientError as e:
+                    if e.response["Error"]["Code"] != "NoSuchKey":
+                        raise
+                existing[job_id] = flatten_job(job_id, job, skills)
                 print(f"  FLAT: {bronze_key}")
             except Exception as e:
                 print(f"  WARNING: failed to flatten {bronze_key}: {e}")

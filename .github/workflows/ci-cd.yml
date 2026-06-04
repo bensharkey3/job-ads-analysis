@@ -15,7 +15,6 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    environment: dev
 
     steps:
       - uses: actions/checkout@v4
@@ -31,36 +30,12 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
-
-      - name: Generate Terraform backend config
-        run: |
-          cat > terraform/backend.hcl <<EOF
-          bucket  = "${{ env.STATE_BUCKET }}"
-          key     = "terraform/dev.tfstate"
-          region  = "${{ env.AWS_DEFAULT_REGION }}"
-          encrypt = true
-          EOF
-
       - name: Terraform init
-        run: terraform init -input=false -backend-config=backend.hcl
+        run: terraform init -backend=false
         working-directory: terraform
 
       - name: Terraform validate
         run: terraform validate
-        working-directory: terraform
-
-      - name: Terraform plan
-        run: |
-          terraform plan -input=false \
-            -var-file=tfvars/dev.tfvars \
-            -var="adzuna_app_id=${{ secrets.ADZUNA_APP_ID }}" \
-            -var="adzuna_app_key=${{ secrets.ADZUNA_APP_KEY }}"
         working-directory: terraform
 
   # ── Deploy to dev ────────────────────────────────────────────────────────────

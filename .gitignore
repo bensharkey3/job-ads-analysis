@@ -4,6 +4,7 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/terraform.tfstate.d/
 terraform/lambda.zip
+terraform/summariser.zip
 terraform/terraform.tfvars
 terraform/backend.hcl
 terraform/tfplan

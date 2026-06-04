@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 import boto3
 
-SEARCH_TERMS = ["senior data engineer", "lead data engineer"]
+SEARCH_TERMS = ["lead data engineer"]
 INITIAL_TIMESTAMP = "2026-05-25T10:39:50Z"
 STATE_KEY = "state/last_run_timestamp.txt"
 

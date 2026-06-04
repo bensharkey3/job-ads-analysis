@@ -1,6 +1,6 @@
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/../search_jobs.py"
+  source_file = "${path.module}/../scrape_jobs.py"
   output_path = "${path.module}/lambda.zip"
 }
 
@@ -64,7 +64,7 @@ resource "aws_lambda_function" "job_ads" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "job-ads-${var.environment}"
   role             = aws_iam_role.lambda_exec.arn
-  handler          = "search_jobs.lambda_handler"
+  handler          = "scrape_jobs.lambda_handler"
   runtime          = "python3.12"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   timeout          = 300

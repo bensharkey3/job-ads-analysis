@@ -1,0 +1,125 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["**"]
+
+env:
+  AWS_DEFAULT_REGION: ap-southeast-2
+  STATE_BUCKET: job-ads-terraform-${{ secrets.AWS_ACCOUNT_ID }}
+  TF_VERSION: "~> 1.0"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ── CI ──────────────────────────────────────────────────────────────────────
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Check syntax
+        run: python -m py_compile scrape_jobs.py
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        run: terraform init -backend=false
+        working-directory: terraform
+
+      - name: Terraform validate
+        run: terraform validate
+        working-directory: terraform
+
+  # ── Deploy to dev ────────────────────────────────────────────────────────────
+  deploy-dev:
+    name: Deploy to dev
+    needs: ci
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Generate Terraform backend config
+        run: |
+          cat > terraform/backend.hcl <<EOF
+          bucket  = "${{ env.STATE_BUCKET }}"
+          key     = "terraform/dev.tfstate"
+          region  = "${{ env.AWS_DEFAULT_REGION }}"
+          encrypt = true
+          EOF
+
+      - name: Terraform init
+        run: terraform init -input=false -backend-config=backend.hcl
+        working-directory: terraform
+
+      - name: Terraform apply
+        run: |
+          terraform apply -auto-approve -input=false \
+            -var-file=tfvars/dev.tfvars \
+            -var="adzuna_app_id=${{ secrets.ADZUNA_APP_ID }}" \
+            -var="adzuna_app_key=${{ secrets.ADZUNA_APP_KEY }}"
+        working-directory: terraform
+
+  # ── Deploy to prod ───────────────────────────────────────────────────────────
+  deploy-prod:
+    name: Deploy to prod
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Generate Terraform backend config
+        run: |
+          cat > terraform/backend.hcl <<EOF
+          bucket  = "${{ env.STATE_BUCKET }}"
+          key     = "terraform/prod.tfstate"
+          region  = "${{ env.AWS_DEFAULT_REGION }}"
+          encrypt = true
+          EOF
+
+      - name: Terraform init
+        run: terraform init -input=false -backend-config=backend.hcl
+        working-directory: terraform
+
+      - name: Terraform apply
+        run: |
+          terraform apply -auto-approve -input=false \
+            -var-file=tfvars/prod.tfvars \
+            -var="adzuna_app_id=${{ secrets.ADZUNA_APP_ID }}" \
+            -var="adzuna_app_key=${{ secrets.ADZUNA_APP_KEY }}"
+        working-directory: terraform

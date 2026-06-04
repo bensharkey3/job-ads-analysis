@@ -26,7 +26,8 @@ resource "aws_iam_role_policy" "scheduler_lambda" {
 }
 
 resource "aws_scheduler_schedule" "daily_job_ads" {
-  name = "job-ads-daily-${var.environment}"
+  name  = "job-ads-daily-${var.environment}"
+  state = var.schedule_state
 
   flexible_time_window {
     mode = "OFF"

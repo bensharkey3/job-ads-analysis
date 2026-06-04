@@ -117,6 +117,7 @@ def fetch_results(app_id, app_key, results_per_page, sort_by=None):
 
 
 def process_jobs(results, s3, bucket, date):
+    description_keys = []
     for i, job in enumerate(results, 1):
         job_id = job["id"]
         title = job.get("title")
@@ -132,15 +133,17 @@ def process_jobs(results, s3, bucket, date):
             if description:
                 desc_key = save_description_to_s3(s3, bucket, job_id, description, date)
                 print(f"     DESC: s3://{bucket}/{desc_key}  ({len(description)} chars)")
+                description_keys.append(desc_key)
             else:
                 print(f"     DESC: scrape failed, skipped")
+    return description_keys
 
 
 def run_adhoc(app_id, app_key, s3, bucket):
     print("Mode: adhoc — fetching 5 most recent results per search term\n")
     results = fetch_results(app_id, app_key, results_per_page=5)
     print(f"Found {len(results)} job listing(s).\n")
-    process_jobs(results, s3, bucket, datetime.now(timezone.utc))
+    return process_jobs(results, s3, bucket, datetime.now(timezone.utc))
 
 
 def run_incremental(app_id, app_key, s3, bucket):
@@ -154,11 +157,13 @@ def run_incremental(app_id, app_key, s3, bucket):
     print(f"Found {len(results)} new job listing(s) since {last_timestamp}.\n")
 
     run_ts = datetime.now(timezone.utc)
+    description_keys = []
     if results:
-        process_jobs(results, s3, bucket, run_ts)
+        description_keys = process_jobs(results, s3, bucket, run_ts)
 
     save_last_timestamp(s3, bucket, run_ts.strftime("%Y-%m-%dT%H:%M:%SZ"))
     print(f"\nTimestamp updated to {run_ts.strftime('%Y-%m-%dT%H:%M:%SZ')}")
+    return description_keys
 
 
 def main():
@@ -195,9 +200,18 @@ def lambda_handler(event, context):
     mode = event.get("mode", "incremental")
 
     if mode == "adhoc":
-        run_adhoc(app_id, app_key, s3, bucket)
+        description_keys = run_adhoc(app_id, app_key, s3, bucket)
     else:
-        run_incremental(app_id, app_key, s3, bucket)
+        description_keys = run_incremental(app_id, app_key, s3, bucket)
+
+    if description_keys:
+        lambda_client = boto3.client("lambda")
+        lambda_client.invoke(
+            FunctionName=os.environ["SUMMARISER_FUNCTION_NAME"],
+            InvocationType="Event",
+            Payload=json.dumps({"description_keys": description_keys}).encode(),
+        )
+        print(f"\nInvoked summariser for {len(description_keys)} description(s).")
 
 
 if __name__ == "__main__":

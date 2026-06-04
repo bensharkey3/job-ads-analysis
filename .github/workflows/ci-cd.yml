@@ -24,7 +24,9 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Check syntax
-        run: python -m py_compile scrape_jobs.py
+        run: |
+          python -m py_compile scrape_jobs.py
+          python -m py_compile summarise_jobs.py
 
       - uses: hashicorp/setup-terraform@v3
         with:

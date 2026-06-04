@@ -25,7 +25,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Check syntax
-        run: python -m py_compile search_jobs.py
+        run: python -m py_compile scrape_jobs.py
 
       - uses: hashicorp/setup-terraform@v3
         with:

@@ -14,7 +14,7 @@ PROMPT_TEMPLATE = (
 
 def extract_skills(bedrock, description_text):
     body = json.dumps({
-        "messages": [{"role": "user", "content": PROMPT_TEMPLATE.format(text=description_text)}],
+        "messages": [{"role": "user", "content": [{"text": PROMPT_TEMPLATE.format(text=description_text)}]}],
         "inferenceConfig": {"maxTokens": 512, "temperature": 0},
     })
     response = bedrock.invoke_model(modelId=BEDROCK_MODEL_ID, body=body, contentType="application/json")

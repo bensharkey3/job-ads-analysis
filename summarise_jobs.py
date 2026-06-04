@@ -6,7 +6,7 @@ import boto3
 BEDROCK_MODEL_ID = "amazon.nova-micro-v1:0"
 
 PROMPT_TEMPLATE = (
-    "Extract all technical skills, tools, and technologies from the job description below. "
+    "Extract all skills, tools, and technologies from the job description below. "
     "Return ONLY a JSON array of lowercase strings, no duplicates, no explanation. "
     'Example: ["python","dbt","snowflake"]\n\nJob description:\n{text}'
 )
@@ -63,3 +63,11 @@ def lambda_handler(event, context):
             summarise_key(s3, bedrock, bucket, key)
         except Exception as e:
             print(f"  WARNING: failed to summarise {key}: {e}")
+
+    flattener_name = os.environ.get("FLATTENER_FUNCTION_NAME")
+    if flattener_name:
+        boto3.client("lambda").invoke(
+            FunctionName=flattener_name,
+            InvocationType="Event",
+            Payload=json.dumps({"description_keys": description_keys}).encode(),
+        )

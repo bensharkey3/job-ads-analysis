@@ -6,7 +6,7 @@ import boto3
 BEDROCK_MODEL_ID = "amazon.nova-micro-v1:0"
 
 PROMPT_TEMPLATE = (
-    "Extract all technical skills, tools, and technologies from the job description below. "
+    "Extract all skills, tools, and technologies from the job description below. "
     "Return ONLY a JSON array of lowercase strings, no duplicates, no explanation. "
     'Example: ["python","dbt","snowflake"]\n\nJob description:\n{text}'
 )

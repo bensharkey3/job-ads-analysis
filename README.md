@@ -36,7 +36,7 @@ The file `state/last_run_timestamp.txt` is read from S3. If it does not exist, a
 
 ## 4. Fetch job listings from Adzuna API
 
-For each search term in `SEARCH_TERMS` (currently `["lead data engineer"]`), the Adzuna API is called for jobs in Melbourne, Australia.
+For each search term in `SEARCH_TERMS` (currently `["lead data engineer", "senior data engineer"]`), the Adzuna API is called for jobs in Melbourne, Australia.
 
 - **Incremental:** fetches up to 50 results sorted by date, then filters to only jobs whose `created` timestamp is after the cutoff
 - **Adhoc:** fetches the 5 most recent results, no date filtering

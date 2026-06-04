@@ -15,6 +15,11 @@ def parse_description_key(key):
     return date_path, job_id
 
 
+def date_path_to_filename(date_path):
+    # "2026/06/04" -> "20260604.json"
+    return date_path.replace("/", "") + ".json"
+
+
 def flatten_job(job_id, job):
     company = job.get("company") or {}
     return {
@@ -58,7 +63,7 @@ def lambda_handler(event, context):
         by_date[date_path].append(job_id)
 
     for date_path, job_ids in by_date.items():
-        silver_key = f"{date_path}/jobs.json"
+        silver_key = date_path_to_filename(date_path)
 
         # Load any records already written for this date (idempotent merge)
         existing = load_existing(s3, silver_bucket, silver_key)

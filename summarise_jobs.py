@@ -69,5 +69,5 @@ def lambda_handler(event, context):
         boto3.client("lambda").invoke(
             FunctionName=flattener_name,
             InvocationType="Event",
-            Payload=json.dumps({"description_keys": description_keys}).encode(),
+            Payload=b"{}",
         )

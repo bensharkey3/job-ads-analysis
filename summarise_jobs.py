@@ -63,3 +63,11 @@ def lambda_handler(event, context):
             summarise_key(s3, bedrock, bucket, key)
         except Exception as e:
             print(f"  WARNING: failed to summarise {key}: {e}")
+
+    flattener_name = os.environ.get("FLATTENER_FUNCTION_NAME")
+    if flattener_name:
+        boto3.client("lambda").invoke(
+            FunctionName=flattener_name,
+            InvocationType="Event",
+            Payload=json.dumps({"description_keys": description_keys}).encode(),
+        )

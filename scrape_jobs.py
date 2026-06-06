@@ -11,8 +11,8 @@ from html.parser import HTMLParser
 import boto3
 
 SEARCH_TERMS = ["lead data engineer", "senior data engineer"]
-INITIAL_TIMESTAMP = "2026-05-20T00:00:00Z"
-STATE_KEY = "state/last_run_timestamp.txt"
+INITIAL_DATE = "2026-05-20"
+STATE_KEY = "state/last_run_date.txt"
 
 
 class _TextExtractor(HTMLParser):
@@ -89,16 +89,16 @@ def save_description_to_s3(s3_client, bucket, job_id, text, date):
     return key
 
 
-def load_last_timestamp(s3_client, bucket):
+def load_last_date(s3_client, bucket):
     try:
         obj = s3_client.get_object(Bucket=bucket, Key=STATE_KEY)
         return obj["Body"].read().decode("utf-8").strip()
     except s3_client.exceptions.NoSuchKey:
-        return INITIAL_TIMESTAMP
+        return INITIAL_DATE
 
 
-def save_last_timestamp(s3_client, bucket, timestamp):
-    s3_client.put_object(Bucket=bucket, Key=STATE_KEY, Body=timestamp.encode("utf-8"), ContentType="text/plain")
+def save_last_date(s3_client, bucket, date):
+    s3_client.put_object(Bucket=bucket, Key=STATE_KEY, Body=date.encode("utf-8"), ContentType="text/plain")
 
 
 def parse_ts(ts):
@@ -147,22 +147,22 @@ def run_adhoc(app_id, app_key, s3, bucket):
 
 
 def run_incremental(app_id, app_key, s3, bucket):
-    last_timestamp = load_last_timestamp(s3, bucket)
-    print(f"Mode: incremental — fetching jobs created after {last_timestamp}\n")
+    last_date = load_last_date(s3, bucket)
+    print(f"Mode: incremental — fetching jobs created after {last_date}\n")
 
     all_results = fetch_results(app_id, app_key, results_per_page=50, sort_by="date")
-    cutoff = parse_ts(last_timestamp)
+    cutoff = datetime.strptime(last_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     results = [job for job in all_results if parse_ts(job["created"]) > cutoff]
 
-    print(f"Found {len(results)} new job listing(s) since {last_timestamp}.\n")
+    print(f"Found {len(results)} new job listing(s) since {last_date}.\n")
 
     run_ts = datetime.now(timezone.utc)
     description_keys = []
     if results:
         description_keys = process_jobs(results, s3, bucket, run_ts)
 
-    save_last_timestamp(s3, bucket, run_ts.strftime("%Y-%m-%dT%H:%M:%SZ"))
-    print(f"\nTimestamp updated to {run_ts.strftime('%Y-%m-%dT%H:%M:%SZ')}")
+    save_last_date(s3, bucket, run_ts.strftime("%Y-%m-%d"))
+    print(f"\nDate updated to {run_ts.strftime('%Y-%m-%d')}")
     return description_keys
 
 

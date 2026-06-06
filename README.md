@@ -28,9 +28,9 @@ The event payload is checked for a `mode` field. Defaults to `incremental` if no
 
 ---
 
-## 3. Load last run timestamp (incremental only)
+## 3. Load last run date (incremental only)
 
-The file `state/last_run_timestamp.txt` is read from S3. If it does not exist, a hardcoded initial timestamp (`2026-05-25T10:39:50Z`) is used as the cutoff.
+The file `state/last_run_date.txt` is read from S3. If it does not exist, a hardcoded initial date (`2026-05-20`) is used as the cutoff.
 
 ---
 
@@ -55,9 +55,9 @@ For each new job listing:
 
 ---
 
-## 6. Update last run timestamp (incremental only)
+## 6. Update last run date (incremental only)
 
-After all jobs are processed, the current UTC time is written back to `state/last_run_timestamp.txt` in S3. This becomes the cutoff for the next incremental run.
+After all jobs are processed, the current UTC date is written back to `state/last_run_date.txt` in S3. This becomes the cutoff for the next incremental run.
 
 ---
 
@@ -66,7 +66,7 @@ After all jobs are processed, the current UTC time is written back to `state/las
 ```
 s3://<bucket>/
   state/
-    last_run_timestamp.txt        # cutoff timestamp for incremental runs
+    last_run_date.txt             # cutoff date for incremental runs
   YYYY/
     MM/
       DD/
